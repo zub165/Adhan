@@ -1,0 +1,392 @@
+/* Moon Phase and Islamic Calendar Styles */
+.calendar-section {
+    background: var(--card-bg);
+    border-radius: var(--border-radius-lg);
+    padding: calc(var(--spacing-unit) * 2);
+    margin: calc(var(--spacing-unit) * 2) auto;
+    max-width: 600px;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: calc(var(--spacing-unit) * 2);
+}
+
+.islamic-date {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: calc(var(--spacing-unit) * 2);
+    padding: calc(var(--spacing-unit) * 1.5);
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: var(--border-radius-lg);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.islamic-date-details {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing-unit) * 1);
+    min-width: 200px;
+}
+
+.islamic-date-primary {
+    display: flex;
+    align-items: baseline;
+    gap: calc(var(--spacing-unit) * 1);
+}
+
+.islamic-day {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+    line-height: 1;
+}
+
+.month-arabic {
+    font-family: 'Noto Sans Arabic', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    margin-right: 0.5rem;
+}
+
+.month-english {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.islamic-year {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 400;
+}
+
+.gregorian-date-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-sm);
+}
+
+.gregorian-date-text {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+}
+
+.gregorian-timezone {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+}
+
+.date-arabic {
+    font-family: 'Noto Sans Arabic', sans-serif;
+    font-size: var(--font-size-xl);
+    color: var(--primary-color);
+    direction: rtl;
+}
+
+.date-english {
+    font-size: var(--font-size-base);
+    color: var(--text-secondary);
+}
+
+.moon-phase {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(var(--spacing-unit) * 0.5);
+}
+
+.moon-icon {
+    font-size: var(--font-size-2xl);
+    line-height: 1;
+    animation: float 3s ease-in-out infinite;
+}
+
+.moon-name {
+    font-size: var(--font-size-sm);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.moon-illumination {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+/* DST Status Styles */
+.dst-status {
+    margin-top: var(--spacing-unit);
+    padding: var(--spacing-unit);
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+#dstStatus {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+/* Animations */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+    100% { transform: translateY(0px); }
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    .calendar-section {
+        flex-direction: column;
+        text-align: center;
+        padding: var(--spacing-unit);
+    }
+
+    .islamic-date {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: calc(var(--spacing-unit));
+    }
+
+    .islamic-date-details {
+        min-width: unset;
+        width: 100%;
+        align-items: center;
+    }
+
+    .gregorian-date-container {
+        width: 100%;
+        margin-top: 0.75rem;
+    }
+
+    .gregorian-date-text {
+        font-size: 0.85rem;
+    }
+
+    .gregorian-timezone {
+        font-size: 0.7rem;
+    }
+
+    .date-arabic {
+        font-size: var(--font-size-lg);
+    }
+
+    .moon-icon {
+        font-size: var(--font-size-xl);
+    }
+}
+
+/* Dark Theme Adjustments */
+[data-theme="dark"] .calendar-section {
+    background: var(--bg-secondary);
+}
+
+/* Ramadan Special Styles */
+.ramadan-mode .calendar-section {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+}
+
+.ramadan-mode .islamic-date,
+.ramadan-mode .moon-phase {
+    color: white;
+}
+
+.ramadan-mode .date-english,
+.ramadan-mode .moon-illumination {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Moon Phase and Calendar Styles */
+.moon-phase {
+    background: var(--background-primary);
+    padding: calc(var(--spacing-unit) * 2.5);
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    text-align: center;
+    margin-bottom: calc(var(--spacing-unit) * 3);
+}
+
+.moon-calendar-container {
+    margin: calc(var(--spacing-unit) * 2.5) 0;
+    background: var(--background-secondary);
+    border-radius: var(--border-radius);
+    padding: calc(var(--spacing-unit) * 2);
+}
+
+.moon-calendar-header {
+    text-align: center;
+    margin-bottom: calc(var(--spacing-unit) * 2);
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+.moon-calendar {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing-unit) * 1.25);
+}
+
+.moon-row,
+.moon-line,
+.date-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: calc(var(--spacing-unit) * 0.5);
+}
+
+.moon-line {
+    padding-bottom: calc(var(--spacing-unit) * 0.625);
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.date-line {
+    padding-top: calc(var(--spacing-unit) * 0.625);
+}
+
+.moon-day {
+    flex: 1;
+    min-width: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(var(--spacing-unit) * 0.5);
+}
+
+.moon-day.current .date {
+    color: var(--secondary-color);
+    font-weight: 500;
+}
+
+.moon-day .moon-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #111;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset -3px 0 5px rgba(0,0,0,0.4);
+}
+
+.moon-day .moon-icon::before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #FFD700;
+    transform-origin: right center;
+    transition: transform 0.3s ease;
+}
+
+.moon-day.current .moon-icon {
+    box-shadow: 0 0 0 2px var(--secondary-color);
+}
+
+.moon-day .date {
+    font-size: 0.75em;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.moon-phase-current {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: calc(var(--spacing-unit) * 2.5);
+    margin: calc(var(--spacing-unit) * 2.5) 0;
+    padding: calc(var(--spacing-unit) * 2.5);
+    background: var(--background-secondary);
+    border-radius: var(--border-radius);
+}
+
+.moon-phase-current .moon-icon-large {
+    width: 100px;
+    height: 100px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.moon-phase-info {
+    text-align: left;
+}
+
+.moon-phase-info h3 {
+    color: var(--secondary-color);
+    margin-bottom: calc(var(--spacing-unit) * 1.25);
+}
+
+.moon-phase-info p {
+    color: var(--text-secondary);
+    margin: calc(var(--spacing-unit) * 0.625) 0;
+}
+
+#moonPhaseImg {
+    width: 100px;
+    height: 100px;
+    margin: calc(var(--spacing-unit) * 2.5) auto;
+}
+
+/* Moon Phase Component */
+.moon-phase-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.moon-phase-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.moon-phase-name {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+/* Dark Theme Adjustments */
+[data-theme="dark"] .moon-phase-container {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Ramadan Theme Adjustments */
+[data-theme="ramadan"] .moon-phase-container {
+    background: rgba(193, 121, 0, 0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .moon-phase-container {
+        padding: 0.4rem 0.8rem;
+        gap: 0.5rem;
+    }
+
+    .moon-phase-icon {
+        font-size: 1.25rem;
+    }
+
+    .moon-phase-name {
+        font-size: 0.8rem;
+    }
+} 

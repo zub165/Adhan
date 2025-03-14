@@ -1,0 +1,137 @@
+/* Selector Styles */
+.selector-group {
+    margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.selector-label {
+    display: block;
+    color: var(--text-secondary);
+    margin-bottom: calc(var(--spacing-unit) * 0.5);
+    font-size: 0.9em;
+}
+
+.selector-container {
+    position: relative;
+    width: 100%;
+}
+
+select.qari-select,
+select.notification-select {
+    width: 100%;
+    padding: calc(var(--spacing-unit) * 0.75);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: var(--border-radius);
+    background-color: var(--background-primary);
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    cursor: pointer;
+}
+
+.selector-container::after {
+    content: '▼';
+    position: absolute;
+    right: calc(var(--spacing-unit) * 1);
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--text-secondary);
+    font-size: 0.8em;
+}
+
+select.qari-select:focus,
+select.notification-select:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+}
+
+select.qari-select:disabled,
+select.notification-select:disabled {
+    background-color: var(--background-secondary);
+    cursor: not-allowed;
+}
+
+/* Radio Button Styles */
+.radio-group {
+    display: flex;
+    gap: calc(var(--spacing-unit) * 2);
+    margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.radio-label input[type="radio"] {
+    margin-right: calc(var(--spacing-unit) * 0.5);
+}
+
+/* Custom Radio Button */
+.radio-label input[type="radio"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--secondary-color);
+    border-radius: 50%;
+    outline: none;
+    margin-right: 8px;
+    position: relative;
+}
+
+.radio-label input[type="radio"]:checked::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: var(--secondary-color);
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.mp3-select {
+    margin-left: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.mp3-select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px var(--accent-color-transparent);
+}
+
+.qari-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.audio-select {
+    margin-left: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    background-color: var(--background-primary);
+    color: var(--text-color);
+    font-size: 0.9em;
+    cursor: pointer;
+    min-width: 120px;
+}
+
+.audio-select:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+} 
