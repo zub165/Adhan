@@ -1,11 +1,21 @@
 class AdhanPlayer {
     constructor() {
-        this.availableQaris = [];
-        this.currentQari = localStorage.getItem('defaultQari') || 'default';
+        this.availableQaris = [
+            'Local',
+            'abdul-basit',
+            'al-hussary',
+            'al-minshawi',
+            'al-ghamdi',
+            'mishary-rashid',
+            'madinah',
+            'makkah',
+            'islamcan'
+        ];
+        this.currentQari = localStorage.getItem('defaultQari') || 'Local';
         this.audio = null;
         this.isPlaying = false;
         this.isLoading = false;
-        this.islamcanFiles = Array.from({length: 21}, (_, i) => `azan${i + 1}`);
+        
         // Initialize after DOM is fully loaded
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.initializeQariSelectors());
@@ -153,23 +163,7 @@ class AdhanPlayer {
         if (!fileList) return;
 
         try {
-            // Clear existing options first
             fileList.innerHTML = '';
-
-            // Special handling for IslamCan
-            if (qari === 'islamcan') {
-                this.islamcanFiles.forEach(file => {
-                    const option = document.createElement('option');
-                    option.value = `${file}.mp3`;
-                    option.textContent = file;
-                    fileList.appendChild(option);
-                });
-                const savedFile = localStorage.getItem(`${prayer}AudioFile_${qari}`);
-                if (savedFile && this.islamcanFiles.includes(savedFile.replace('.mp3', ''))) {
-                    fileList.value = savedFile;
-                }
-                return;
-            }
 
             // Add a default option
             const defaultOption = document.createElement('option');
@@ -177,40 +171,42 @@ class AdhanPlayer {
             defaultOption.textContent = 'Default Adhan';
             fileList.appendChild(defaultOption);
 
-            // For other Qaris, try to fetch the file list from the correct server port
-            const response = await fetch(`http://localhost:3001/adhans/${qari}/list`);
-            if (!response.ok) {
-                console.log(`No additional audio files found for ${qari}`);
-                return;
-            }
-            
-            const files = await response.json();
-            if (!files || files.length === 0) {
-                console.log(`No audio files found for ${qari}`);
-                return;
-            }
+            // Get the static file list based on qari
+            const files = await this.getStaticFileList(qari);
             
             files.forEach(file => {
-                if (file.toLowerCase().endsWith('.mp3')) {
-                    const option = document.createElement('option');
-                    option.value = file;
-                    option.textContent = file.replace('.mp3', '').replace(/_/g, ' ');
-                    fileList.appendChild(option);
-                }
+                const option = document.createElement('option');
+                option.value = file;
+                option.textContent = file.replace('.mp3', '').replace(/_/g, ' ');
+                fileList.appendChild(option);
             });
             
             const savedFile = localStorage.getItem(`${prayer}AudioFile_${qari}`);
-            if (savedFile && (savedFile === 'adhan.mp3' || files.includes(savedFile))) {
+            if (savedFile && files.includes(savedFile)) {
                 fileList.value = savedFile;
             }
             
-            // Save selection
             fileList.addEventListener('change', (e) => {
                 localStorage.setItem(`${prayer}AudioFile_${qari}`, e.target.value);
             });
         } catch (error) {
             console.error('Error loading audio files:', error);
         }
+    }
+
+    getStaticFileList(qari) {
+        // Return predefined lists based on qari
+        const staticFiles = {
+            'Local': ['adhan.mp3', 'azan.mp3', 'azan2.mp3', 'default-azan.mp3', 'default-azanfajr.mp3'],
+            'abdul-basit': ['adhan_masr.mp3', 'adhan_makkah.mp3', 'adhan_fajr_masr.mp3'],
+            'al-hussary': ['adhan_cairo.mp3', 'adhan_fajr.mp3'],
+            'al-minshawi': ['adhan1.mp3', 'adhan2.mp3', 'adhan3.mp3', 'adhan4.mp3', 'adhan5.mp3'],
+            'madinah': ['adhan_madinah1.mp3', 'adhan_madinah2.mp3', 'adhan_fajr_madinah.mp3'],
+            'makkah': ['adhan_makkah1.mp3', 'adhan_makkah2.mp3', 'adhan_fajr_makkah.mp3'],
+            'islamcan': Array.from({length: 21}, (_, i) => `azan${i + 1}.mp3`)
+        };
+        
+        return Promise.resolve(staticFiles[qari] || []);
     }
 
     async stopAzan() {
@@ -361,158 +357,38 @@ class AdhanPlayer {
         });
     }
 
-    async playAzan(prayerName) {
+    async playAzan(prayer) {
+        if (this.isPlaying || this.isLoading) return;
+        
         try {
-            // Prevent multiple playback attempts
-            if (this.isPlaying || this.isLoading) {
-                console.log('Already playing or loading audio');
-                return false;
-            }
-
             this.isLoading = true;
+            const qari = document.getElementById(`${prayer}QariSelect`).value;
+            const savedFile = localStorage.getItem(`${prayer}AudioFile_${qari}`) || 'adhan.mp3';
             
-            // Stop any existing audio first
-            await this.stopAzan();
+            // Clean up any existing audio
+            this.cleanupAudio();
             
-            // Get the selected Qari for this prayer
-            const qariSelect = document.getElementById(`${prayerName}QariSelect`);
-            const selectedQari = qariSelect ? qariSelect.value : 'default';
-            
-            // Get the selected audio file and URL from localStorage
-            const selectedFile = localStorage.getItem(`${prayerName}AudioFile_${selectedQari}`) || 'adhan.mp3';
-            let audioUrl = localStorage.getItem(`${prayerName}AudioURL_${selectedQari}`);
-            
-            if (!audioUrl) {
-                audioUrl = `/adhans/${selectedQari}/${selectedFile}`;
-            }
-
-            console.log(`Playing Adhan for ${prayerName} using Qari: ${selectedQari}, File: ${selectedFile}, URL: ${audioUrl}`);
-
-            // Create new audio element
+            // Create new audio instance
             this.audio = new Audio();
             
-            return new Promise((resolve, reject) => {
-                // Set up event listeners
-                const cleanup = () => {
-                    this.audio.oncanplaythrough = null;
-                    this.audio.onerror = null;
-                    clearTimeout(loadTimeout);
-                };
-
-                const handleCanPlay = () => {
-                    cleanup();
-                    this.isLoading = false;
-                    this.isPlaying = true;
-                    
-                    // Update button states
-                    this.updateButtonStates(prayerName);
-                    
-                    this.audio.play().catch(error => {
-                        console.error('Error playing audio:', error);
-                        this.cleanupAudio();
-                        this.resetButtonStates();
-                        reject(error);
-                    });
-                    resolve(true);
-                };
-
-                const handleError = async (e) => {
-                    cleanup();
-                    console.error('Error loading audio:', e);
-                    this.cleanupAudio();
-                    this.resetButtonStates();
-                    
-                    // Try playing default Adhan
-                    console.log('Falling back to default Adhan...');
-                    try {
-                        await this.playDefaultAzan();
-                        resolve(true);
-                    } catch (fallbackError) {
-                        reject(fallbackError);
-                    }
-                };
-
-                // Set up timeout for loading
-                const loadTimeout = setTimeout(() => {
-                    cleanup();
-                    this.cleanupAudio();
-                    this.resetButtonStates();
-                    reject(new Error('Audio loading timeout'));
-                }, 10000);
-
-                // Add event listeners
-                this.audio.oncanplaythrough = handleCanPlay;
-                this.audio.onerror = handleError;
-                this.audio.onended = () => {
-                    this.cleanupAudio();
-                    this.resetButtonStates();
-                };
-
-                // Set audio source with absolute path
-                const audioPath = `/adhans/${selectedQari}/${selectedFile}`;
-                console.log('🎵 Loading audio from:', audioPath);
-                this.audio.src = audioPath;
-                this.audio.load();
-            });
-        } catch (error) {
-            console.error('Error in playAzan:', error);
-            this.cleanupAudio();
-            this.resetButtonStates();
-            await this.playDefaultAzan();
-            return false;
-        }
-    }
-
-    async playDefaultAzan() {
-        try {
-            await this.stopAzan();
-
-            console.log('🔄 Playing default Adhan');
-            const defaultPath = '/adhans/default/adhan.mp3';
+            // Set up event listeners
+            this.setupAudioEventListeners(prayer);
             
-            this.audio = new Audio(defaultPath);
+            // Set the source and load the audio
+            this.audio.src = `adhans/${qari}/${savedFile}`;
+            await this.audio.load();
             
-            return new Promise((resolve, reject) => {
-                const cleanup = () => {
-                    this.audio.oncanplaythrough = null;
-                    this.audio.onerror = null;
-                    clearTimeout(loadTimeout);
-                };
-
-                const loadTimeout = setTimeout(() => {
-                    cleanup();
-                    this.cleanupAudio();
-                    reject(new Error('Default audio loading timeout'));
-                }, 5000);
-
-                this.audio.oncanplaythrough = () => {
-                    cleanup();
-                    this.isLoading = false;
-                    this.isPlaying = true;
-                    this.audio.play().catch(reject);
-                    resolve(true);
-                };
-
-                this.audio.onerror = (error) => {
-                    cleanup();
-                    this.cleanupAudio();
-                    reject(error);
-                };
-
-                this.audio.onended = () => {
-                    this.cleanupAudio();
-                    document.querySelectorAll('.test-adhan').forEach(button => {
-                        button.textContent = 'Test Adhan';
-                        button.disabled = false;
-                    });
-                };
-
-                this.audio.load();
-            });
+            // Play the audio
+            await this.audio.play();
+            this.isPlaying = true;
+            this.isLoading = false;
+            
+            console.log('▶️ Playing Adhan:', qari, savedFile);
         } catch (error) {
-            console.error('Error playing default Adhan:', error);
+            console.error('Error playing Adhan:', error);
+            this.isPlaying = false;
+            this.isLoading = false;
             this.cleanupAudio();
-            throw error;
         }
     }
 
