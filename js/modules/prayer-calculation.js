@@ -246,7 +246,7 @@ class PrayerCalculation {
             const asrAngle = this.toDegrees(Math.PI / 2 - t);
             
             return this.calculatePrayerTime(date, latitude, longitude, asrAngle);
-        } catch (error) {
+    } catch (error) {
             console.error('Error calculating Asr time:', error);
             return null;
         }
