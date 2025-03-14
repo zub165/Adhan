@@ -217,6 +217,223 @@ npm start
 - Run integration tests: `npm run test:integration`
 - Run e2e tests: `npm run test:e2e`
 
+## Deployment
+
+### Deployment Options
+
+#### 1. Traditional Server Deployment
+```bash
+# Build the application
+npm run build
+
+# Start production server
+NODE_ENV=production npm start
+```
+
+#### 2. Docker Deployment
+```bash
+# Build Docker image
+docker build -t adhan-app .
+
+# Run container
+docker run -p 3000:3000 adhan-app
+```
+
+#### 3. Cloud Platform Deployment
+
+##### Heroku
+```bash
+# Login to Heroku
+heroku login
+
+# Create new app
+heroku create adhan-app
+
+# Push to Heroku
+git push heroku main
+```
+
+##### Vercel
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+vercel
+```
+
+### Environment Variables
+```env
+# Server Configuration
+PORT=3000
+NODE_ENV=production
+
+# API Keys (if needed)
+WEATHER_API_KEY=your_key_here
+LOCATION_API_KEY=your_key_here
+
+# Database Configuration (if using)
+DB_HOST=localhost
+DB_USER=user
+DB_PASS=password
+DB_NAME=adhan_db
+```
+
+## Troubleshooting Guide
+
+### Common Issues and Solutions
+
+#### 1. Prayer Time Calculation Issues
+
+##### Incorrect Prayer Times
+- **Symptom**: Prayer times don't match local mosque
+- **Solution**: 
+  1. Verify calculation method
+  2. Check coordinates accuracy
+  3. Confirm timezone settings
+  4. Validate DST settings
+
+##### High Latitude Problems
+- **Symptom**: Extreme or invalid prayer times
+- **Solution**:
+  1. Enable high latitude adjustment
+  2. Select appropriate calculation method
+  3. Verify latitude value
+
+#### 2. Audio Playback Issues
+
+##### Adhan Not Playing
+- **Symptom**: No sound during prayer times
+- **Solution**:
+  1. Check browser permissions
+  2. Verify audio file exists
+  3. Confirm volume settings
+  4. Clear browser cache
+
+##### Download Failures
+- **Symptom**: Cannot download Adhan files
+- **Solution**:
+  1. Check internet connection
+  2. Verify server status
+  3. Clear browser cache
+  4. Try alternative download source
+
+#### 3. Location Issues
+
+##### Location Not Detected
+- **Symptom**: App shows default location
+- **Solution**:
+  1. Enable location services
+  2. Grant browser permissions
+  3. Try manual coordinates
+  4. Check internet connection
+
+##### Incorrect Location
+- **Symptom**: Wrong city or coordinates
+- **Solution**:
+  1. Refresh location data
+  2. Clear location cache
+  3. Enter coordinates manually
+  4. Update browser settings
+
+#### 4. Performance Issues
+
+##### Slow Loading
+- **Symptom**: App takes long to load
+- **Solution**:
+  1. Clear browser cache
+  2. Check internet speed
+  3. Disable unused features
+  4. Update browser
+
+##### High CPU Usage
+- **Symptom**: Browser slows down
+- **Solution**:
+  1. Close unused tabs
+  2. Disable background processes
+  3. Update browser
+  4. Check system resources
+
+### Debugging Tools
+
+#### Browser Developer Tools
+1. Console logging
+2. Network monitoring
+3. Performance profiling
+4. Memory analysis
+
+#### Server Logs
+```bash
+# View server logs
+npm run logs
+
+# Debug mode
+DEBUG=* npm start
+
+# Specific component debugging
+DEBUG=adhan:* npm start
+```
+
+#### Testing Tools
+```bash
+# Run specific test
+npm test -- -t "test-name"
+
+# Debug tests
+npm run test:debug
+
+# Coverage report
+npm run test:coverage
+```
+
+## Security Considerations
+
+### Client-Side Security
+1. Input validation
+2. XSS prevention
+3. CSRF protection
+4. Secure storage handling
+
+### Server-Side Security
+1. Rate limiting
+2. Request validation
+3. Error handling
+4. Dependency scanning
+
+### API Security
+1. Authentication
+2. Authorization
+3. Data validation
+4. Response sanitization
+
+## Performance Optimization
+
+### Frontend Optimization
+1. Code splitting
+2. Lazy loading
+3. Asset optimization
+4. Caching strategies
+
+### Backend Optimization
+1. Response caching
+2. Database indexing
+3. Query optimization
+4. Load balancing
+
+## Monitoring and Analytics
+
+### Application Monitoring
+1. Error tracking
+2. Performance metrics
+3. User analytics
+4. Usage statistics
+
+### Server Monitoring
+1. Resource usage
+2. Response times
+3. Error rates
+4. System health
+
 ## Contributing
 
 1. Fork the repository
