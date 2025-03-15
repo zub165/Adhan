@@ -39,11 +39,10 @@ async function loadLocalAdhan() {
     return new Promise((resolve, reject) => {
         const script = document.createElement('script');
         script.src = '/js/modules/adhan.js';
-        script.type = 'text/javascript';  // Changed from module to regular script
+        script.type = 'text/javascript';
         script.async = true;
 
         script.onload = () => {
-            // Check if Adhan object is available globally
             if (typeof window.Adhan !== 'undefined') {
                 console.log("✅ Local Adhan.js loaded successfully");
                 resolve();
