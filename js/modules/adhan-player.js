@@ -30,6 +30,7 @@ class AdhanPlayer {
     }
 
     initializeQariSelectors() {
+        console.log('Initializing Qari selectors...');
         const prayers = ['tahajjud', 'suhoor', 'fajr', 'ishraq', 'dhuhr', 'asr', 'maghrib', 'isha'];
         prayers.forEach(prayer => {
             const prayerCard = document.querySelector(`.prayer-card[data-prayer="${prayer}"]`);
@@ -59,67 +60,6 @@ class AdhanPlayer {
                     } else {
                         prayerCard.appendChild(container);
                     }
-                }
-                
-                // Add browse button if it doesn't exist
-                let browseButton = prayerCard.querySelector('.browse-button');
-                if (!browseButton) {
-                    browseButton = document.createElement('button');
-                    browseButton.textContent = 'Browse Files';
-                    browseButton.className = 'browse-button';
-                    browseButton.onclick = () => this.showFileSelector(prayer);
-                    container.appendChild(browseButton);
-                }
-
-                // Create file selector modal if it doesn't exist
-                let modal = document.getElementById(`${prayer}Modal`);
-                if (!modal) {
-                    modal = document.createElement('div');
-                    modal.id = `${prayer}Modal`;
-                    modal.className = 'file-selector-modal';
-                    modal.style.display = 'none';
-                    modal.innerHTML = `
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h3>Select Adhan File</h3>
-                                <button class="close-modal">&times;</button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="file-browser">
-                                    <div class="qari-list"></div>
-                                    <div class="file-list"></div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    document.body.appendChild(modal);
-
-                    // Close modal when clicking the close button
-                    modal.querySelector('.close-modal').onclick = () => {
-                        modal.style.display = 'none';
-                    };
-
-                    // Close modal when clicking outside
-                    window.onclick = (event) => {
-                        if (event.target === modal) {
-                            modal.style.display = 'none';
-                        }
-                    };
-                }
-                
-                // Add change event listener for Qari select if not already added
-                const select = document.getElementById(`${prayer}QariSelect`);
-                if (select) {
-                    // Remove existing event listeners to avoid duplicates
-                    const newSelect = select.cloneNode(true);
-                    select.parentNode.replaceChild(newSelect, select);
-                    
-                    // Add new event listener
-                    newSelect.addEventListener('change', async (e) => {
-                        const selectedQari = e.target.value;
-                        localStorage.setItem(`${prayer}Qari`, selectedQari);
-                        console.log(`Selected Qari for ${prayer}: ${selectedQari}`);
-                    });
                 }
                 
                 // Set up play/stop buttons
@@ -308,6 +248,7 @@ class AdhanPlayer {
 
     async scanAvailableQaris() {
         try {
+            console.log('Scanning available Qaris...');
             // List of all available Qaris from the adhans directory
             const qariList = [
                 'abdul-basit',
@@ -343,10 +284,12 @@ class AdhanPlayer {
     }
 
     updateQariSelectors() {
+        console.log('Updating Qari selectors with available options...');
         const prayers = ['tahajjud', 'suhoor', 'fajr', 'ishraq', 'dhuhr', 'asr', 'maghrib', 'isha'];
         prayers.forEach(prayer => {
             const select = document.getElementById(`${prayer}QariSelect`);
             if (select) {
+                console.log(`Updating selector for ${prayer}...`);
                 // Store current selection
                 const currentSelection = select.value;
                 
@@ -369,9 +312,14 @@ class AdhanPlayer {
                     select.value = 'default';
                 }
                 
-                // Trigger change event to update audio files
-                const event = new Event('change');
-                select.dispatchEvent(event);
+                // Add change event listener
+                select.addEventListener('change', (e) => {
+                    const selectedQari = e.target.value;
+                    localStorage.setItem(`${prayer}Qari`, selectedQari);
+                    console.log(`Selected Qari for ${prayer}: ${selectedQari}`);
+                });
+            } else {
+                console.warn(`Selector for ${prayer} not found`);
             }
         });
     }
@@ -390,75 +338,63 @@ class AdhanPlayer {
             const qari = qariSelect ? qariSelect.value : this.currentQari;
             
             // Determine the audio file to play
-            let audioFile = localStorage.getItem(`${prayer}AudioFile_${qari}`);
-            
-            // If no file is stored in localStorage, use default files based on prayer
-            if (!audioFile) {
-                if (prayer === 'fajr') {
-                    // Check for fajr-specific files first
-                    audioFile = 'fajr.mp3';
-                } else {
-                    audioFile = 'adhan.mp3';
-                }
+            let audioFile = 'adhan.mp3';
+            if (prayer === 'fajr') {
+                audioFile = 'fajr.mp3';
             }
             
-            // Construct the audio URL with the correct base path
-            const audioUrl = `${this.basePath}/adhans/${qari}/${audioFile}`;
+            // Save the selection
+            localStorage.setItem(`${prayer}Qari`, qari);
             
-            console.log(`Playing adhan for ${prayer} using ${qari}/${audioFile}`);
-            console.log(`Full audio URL: ${audioUrl}`);
-            console.log(`Base path: ${this.basePath}`);
+            // Construct the audio URL with the correct base path
+            const basePath = this.getBasePath();
+            const audioUrl = `${basePath}/adhans/${qari}/${audioFile}`;
+            
+            console.log(`Playing adhan for ${prayer} using ${qari}/${audioFile}, URL: ${audioUrl}`);
             
             // Create a new audio element
             this.audio = new Audio(audioUrl);
             
-            // Set up event listeners with more detailed error logging
-            this.audio.onerror = (e) => {
-                console.error('Audio error details:', {
-                    code: this.audio.error ? this.audio.error.code : 'unknown',
-                    message: this.audio.error ? this.audio.error.message : 'unknown',
-                    url: audioUrl,
-                    event: e
-                });
-                
-                // Try fallback to default adhan if the selected one fails
-                if (qari !== 'default') {
-                    console.log('Trying fallback to default adhan...');
-                    this.tryFallbackAdhan(prayer);
-                } else {
-                    this.isPlaying = false;
-                    this.isLoading = false;
-                    this.audio = null;
-                }
-            };
-            
+            // Set up event listeners
             this.audio.onended = () => {
                 console.log('Audio playback ended');
                 this.isPlaying = false;
+                this.isLoading = false;
                 this.audio = null;
+                this.resetButtonStates();
+            };
+            
+            this.audio.onerror = (error) => {
+                console.error('Error loading audio:', error);
+                this.isPlaying = false;
+                this.isLoading = false;
+                this.audio = null;
+                this.resetButtonStates();
+                
+                // Try fallback to default adhan
+                this.playDefaultAdhan();
             };
             
             this.audio.oncanplaythrough = () => {
                 console.log('Audio can play through');
+                this.isLoading = false;
+                this.isPlaying = true;
+                this.updateButtonStates(prayer);
             };
             
-            // Start playback
-            console.log('Attempting to play audio...');
+            // Load and play the audio
+            this.audio.load();
             await this.audio.play();
-            
-            console.log('Audio playback started successfully');
-            this.isPlaying = true;
-            this.isLoading = false;
             
             return true;
         } catch (error) {
             console.error('Error playing adhan:', error);
-            console.error('Stack trace:', error.stack);
             this.isPlaying = false;
             this.isLoading = false;
+            this.resetButtonStates();
             
             // Try fallback to default adhan
-            return this.tryFallbackAdhan(prayer);
+            return this.playDefaultAdhan();
         }
     }
     
