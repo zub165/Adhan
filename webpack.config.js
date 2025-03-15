@@ -51,7 +51,10 @@ module.exports = {
         {
           from: 'adhans',
           to: 'adhans',
-          noErrorOnMissing: true
+          noErrorOnMissing: true,
+          globOptions: {
+            ignore: ['**/.DS_Store', '**/Thumbs.db']
+          }
         },
         {
           from: 'css',
@@ -96,7 +99,9 @@ module.exports = {
     extensions: ['.js']
   },
   performance: {
-    hints: false
+    hints: false,
+    maxAssetSize: 10000000, // 10MB
+    maxEntrypointSize: 10000000 // 10MB
   },
   devServer: {
     static: {

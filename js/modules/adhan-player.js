@@ -390,33 +390,119 @@ class AdhanPlayer {
             const qari = qariSelect ? qariSelect.value : this.currentQari;
             
             // Determine the audio file to play
-            let audioFile = localStorage.getItem(`${prayer}AudioFile_${qari}`) || 'adhan.mp3';
-            if (prayer === 'fajr') {
-                audioFile = localStorage.getItem(`${prayer}AudioFile_${qari}`) || 'adhan_fajr.mp3';
+            let audioFile = localStorage.getItem(`${prayer}AudioFile_${qari}`);
+            
+            // If no file is stored in localStorage, use default files based on prayer
+            if (!audioFile) {
+                if (prayer === 'fajr') {
+                    // Check for fajr-specific files first
+                    audioFile = 'fajr.mp3';
+                } else {
+                    audioFile = 'adhan.mp3';
+                }
             }
             
             // Construct the audio URL with the correct base path
             const audioUrl = `${this.basePath}/adhans/${qari}/${audioFile}`;
             
             console.log(`Playing adhan for ${prayer} using ${qari}/${audioFile}`);
+            console.log(`Full audio URL: ${audioUrl}`);
+            console.log(`Base path: ${this.basePath}`);
             
             // Create a new audio element
             this.audio = new Audio(audioUrl);
             
-            // Set up event listeners
-            this.setupAudioEvents();
+            // Set up event listeners with more detailed error logging
+            this.audio.onerror = (e) => {
+                console.error('Audio error details:', {
+                    code: this.audio.error ? this.audio.error.code : 'unknown',
+                    message: this.audio.error ? this.audio.error.message : 'unknown',
+                    url: audioUrl,
+                    event: e
+                });
+                
+                // Try fallback to default adhan if the selected one fails
+                if (qari !== 'default') {
+                    console.log('Trying fallback to default adhan...');
+                    this.tryFallbackAdhan(prayer);
+                } else {
+                    this.isPlaying = false;
+                    this.isLoading = false;
+                    this.audio = null;
+                }
+            };
+            
+            this.audio.onended = () => {
+                console.log('Audio playback ended');
+                this.isPlaying = false;
+                this.audio = null;
+            };
+            
+            this.audio.oncanplaythrough = () => {
+                console.log('Audio can play through');
+            };
             
             // Start playback
+            console.log('Attempting to play audio...');
             await this.audio.play();
             
+            console.log('Audio playback started successfully');
             this.isPlaying = true;
             this.isLoading = false;
             
             return true;
         } catch (error) {
             console.error('Error playing adhan:', error);
+            console.error('Stack trace:', error.stack);
             this.isPlaying = false;
             this.isLoading = false;
+            
+            // Try fallback to default adhan
+            return this.tryFallbackAdhan(prayer);
+        }
+    }
+    
+    // New method to try fallback to default adhan
+    async tryFallbackAdhan(prayer) {
+        try {
+            console.log('Trying to play default adhan as fallback...');
+            
+            // Use default adhan
+            const audioFile = prayer === 'fajr' ? 'fajr.mp3' : 'adhan.mp3';
+            const audioUrl = `${this.basePath}/adhans/default/${audioFile}`;
+            
+            console.log(`Fallback audio URL: ${audioUrl}`);
+            
+            // Create a new audio element
+            this.audio = new Audio(audioUrl);
+            
+            // Set up basic event listeners
+            this.audio.onended = () => {
+                console.log('Fallback audio playback ended');
+                this.isPlaying = false;
+                this.audio = null;
+            };
+            
+            this.audio.onerror = (e) => {
+                console.error('Fallback audio error:', e);
+                this.isPlaying = false;
+                this.isLoading = false;
+                this.audio = null;
+            };
+            
+            // Start playback
+            await this.audio.play();
+            
+            console.log('Fallback audio playback started successfully');
+            this.isPlaying = true;
+            this.isLoading = false;
+            
+            return true;
+        } catch (error) {
+            console.error('Error playing fallback adhan:', error);
+            this.isPlaying = false;
+            this.isLoading = false;
+            this.audio = null;
             return false;
         }
     }
