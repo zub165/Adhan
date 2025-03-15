@@ -1,0 +1,213 @@
+/* Theme Variables */
+:root {
+    /* Base Spacing and Sizing */
+    --spacing-unit: 8px;
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 16px;
+    --container-width: 1200px;
+    
+    /* Typography */
+    --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    
+    /* Transitions */
+    --transition-fast: 150ms ease;
+    --transition-normal: 250ms ease;
+    --transition-slow: 350ms ease;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    
+    /* Z-index */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-fixed: 1030;
+    --z-modal: 1040;
+    --z-popover: 1050;
+    --z-tooltip: 1060;
+}
+
+/* Light Theme (Default) */
+[data-theme="light"] {
+    /* Colors */
+    --primary-color: #2196F3;
+    --primary-light: #64B5F6;
+    --primary-dark: #1976D2;
+    
+    --secondary-color: #4CAF50;
+    --secondary-light: #81C784;
+    --secondary-dark: #388E3C;
+    
+    --accent-color: #FF9800;
+    --accent-light: #FFB74D;
+    --accent-dark: #F57C00;
+    
+    /* Text Colors */
+    --text-primary: #1A1A1A;
+    --text-secondary: #666666;
+    --text-tertiary: #999999;
+    --text-inverse: #FFFFFF;
+    
+    /* Background Colors */
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F5F7FA;
+    --bg-tertiary: #E8EDF2;
+    --bg-inverse: #1A1A1A;
+    
+    /* Status Colors */
+    --success-color: #4CAF50;
+    --warning-color: #FF9800;
+    --error-color: #F44336;
+    --info-color: #2196F3;
+    
+    /* Border Colors */
+    --border-color: #E0E0E0;
+    --border-color-light: #F0F0F0;
+    --border-color-dark: #CCCCCC;
+    
+    /* Card and Container */
+    --card-bg: var(--bg-primary);
+    --card-border: var(--border-color);
+    --card-shadow: var(--shadow-md);
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+    /* Colors */
+    --primary-color: #90CAF9;
+    --primary-light: #BBDEFB;
+    --primary-dark: #64B5F6;
+    
+    --secondary-color: #81C784;
+    --secondary-light: #A5D6A7;
+    --secondary-dark: #66BB6A;
+    
+    --accent-color: #FFB74D;
+    --accent-light: #FFCC80;
+    --accent-dark: #FFA726;
+    
+    /* Text Colors */
+    --text-primary: #FFFFFF;
+    --text-secondary: #B0B0B0;
+    --text-tertiary: #808080;
+    --text-inverse: #1A1A1A;
+    
+    /* Background Colors */
+    --bg-primary: #1A1A1A;
+    --bg-secondary: #2D2D2D;
+    --bg-tertiary: #404040;
+    --bg-inverse: #FFFFFF;
+    
+    /* Status Colors */
+    --success-color: #81C784;
+    --warning-color: #FFB74D;
+    --error-color: #E57373;
+    --info-color: #64B5F6;
+    
+    /* Border Colors */
+    --border-color: #404040;
+    --border-color-light: #4D4D4D;
+    --border-color-dark: #333333;
+    
+    /* Card and Container */
+    --card-bg: var(--bg-secondary);
+    --card-border: var(--border-color);
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* Sepia Theme */
+[data-theme="sepia"] {
+    /* Colors */
+    --primary-color: #8B4513;
+    --primary-light: #A0522D;
+    --primary-dark: #6B3811;
+    
+    --secondary-color: #6B8E23;
+    --secondary-light: #9ACD32;
+    --secondary-dark: #556B2F;
+    
+    --accent-color: #CD853F;
+    --accent-light: #DEB887;
+    --accent-dark: #8B5A2B;
+    
+    /* Text Colors */
+    --text-primary: #5C4033;
+    --text-secondary: #8B7355;
+    --text-tertiary: #A0855B;
+    --text-inverse: #FFF8DC;
+    
+    /* Background Colors */
+    --bg-primary: #FFF8DC;
+    --bg-secondary: #FFE4B5;
+    --bg-tertiary: #FFDEAD;
+    --bg-inverse: #5C4033;
+    
+    /* Status Colors */
+    --success-color: #6B8E23;
+    --warning-color: #CD853F;
+    --error-color: #8B4513;
+    --info-color: #4A708B;
+    
+    /* Border Colors */
+    --border-color: #DEB887;
+    --border-color-light: #F5DEB3;
+    --border-color-dark: #D2B48C;
+    
+    /* Card and Container */
+    --card-bg: var(--bg-primary);
+    --card-border: var(--border-color);
+    --card-shadow: 0 4px 6px -1px rgba(139, 69, 19, 0.1);
+}
+
+/* High Contrast Theme */
+[data-theme="high-contrast"] {
+    /* Colors */
+    --primary-color: #FFFFFF;
+    --primary-light: #FFFFFF;
+    --primary-dark: #FFFFFF;
+    
+    --secondary-color: #FFFF00;
+    --secondary-light: #FFFF00;
+    --secondary-dark: #FFFF00;
+    
+    --accent-color: #00FF00;
+    --accent-light: #00FF00;
+    --accent-dark: #00FF00;
+    
+    /* Text Colors */
+    --text-primary: #FFFFFF;
+    --text-secondary: #FFFFFF;
+    --text-tertiary: #FFFFFF;
+    --text-inverse: #000000;
+    
+    /* Background Colors */
+    --bg-primary: #000000;
+    --bg-secondary: #000000;
+    --bg-tertiary: #000000;
+    --bg-inverse: #FFFFFF;
+    
+    /* Status Colors */
+    --success-color: #00FF00;
+    --warning-color: #FFFF00;
+    --error-color: #FF0000;
+    --info-color: #00FFFF;
+    
+    /* Border Colors */
+    --border-color: #FFFFFF;
+    --border-color-light: #FFFFFF;
+    --border-color-dark: #FFFFFF;
+    
+    /* Card and Container */
+    --card-bg: var(--bg-primary);
+    --card-border: var(--border-color);
+    --card-shadow: none;
+} 
