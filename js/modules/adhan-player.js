@@ -6,12 +6,27 @@ class AdhanPlayer {
         this.isPlaying = false;
         this.isLoading = false;
         this.islamcanFiles = Array.from({length: 21}, (_, i) => `azan${i + 1}`);
+        // Get base path for assets
+        this.basePath = this.getBasePath();
         // Initialize after DOM is fully loaded
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.initializeQariSelectors());
         } else {
             this.initializeQariSelectors();
         }
+    }
+
+    // Helper function to determine if we're running on GitHub Pages
+    isGitHubPages() {
+        return window.location.hostname === 'zub165.github.io';
+    }
+    
+    // Helper function to get the base path
+    getBasePath() {
+        if (this.isGitHubPages()) {
+            return '/Adhan';
+        }
+        return '';
     }
 
     initializeQariSelectors() {
@@ -178,7 +193,7 @@ class AdhanPlayer {
             fileList.appendChild(defaultOption);
 
             // For other Qaris, try to fetch the file list from the correct server port
-            const response = await fetch(`http://localhost:3001/adhans/${qari}/list`);
+            const response = await fetch(`${this.basePath}/api/adhans/${qari}/list`);
             if (!response.ok) {
                 console.log(`No additional audio files found for ${qari}`);
                 return;
@@ -361,104 +376,47 @@ class AdhanPlayer {
         });
     }
 
-    async playAzan(prayerName) {
+    async playAzan(prayer) {
         try {
-            // Prevent multiple playback attempts
             if (this.isPlaying || this.isLoading) {
                 console.log('Already playing or loading audio');
                 return false;
             }
-
+            
             this.isLoading = true;
             
-            // Stop any existing audio first
-            await this.stopAzan();
-            
             // Get the selected Qari for this prayer
-            const qariSelect = document.getElementById(`${prayerName}QariSelect`);
-            const selectedQari = qariSelect ? qariSelect.value : 'default';
+            const qariSelect = document.getElementById(`${prayer}QariSelect`);
+            const qari = qariSelect ? qariSelect.value : this.currentQari;
             
-            // Get the selected audio file and URL from localStorage
-            const selectedFile = localStorage.getItem(`${prayerName}AudioFile_${selectedQari}`) || 'adhan.mp3';
-            let audioUrl = localStorage.getItem(`${prayerName}AudioURL_${selectedQari}`);
-            
-            if (!audioUrl) {
-                audioUrl = `/adhans/${selectedQari}/${selectedFile}`;
+            // Determine the audio file to play
+            let audioFile = localStorage.getItem(`${prayer}AudioFile_${qari}`) || 'adhan.mp3';
+            if (prayer === 'fajr') {
+                audioFile = localStorage.getItem(`${prayer}AudioFile_${qari}`) || 'adhan_fajr.mp3';
             }
-
-            console.log(`Playing Adhan for ${prayerName} using Qari: ${selectedQari}, File: ${selectedFile}, URL: ${audioUrl}`);
-
-            // Create new audio element
-            this.audio = new Audio();
             
-            return new Promise((resolve, reject) => {
-                // Set up event listeners
-                const cleanup = () => {
-                    this.audio.oncanplaythrough = null;
-                    this.audio.onerror = null;
-                    clearTimeout(loadTimeout);
-                };
-
-                const handleCanPlay = () => {
-                    cleanup();
-                    this.isLoading = false;
-                    this.isPlaying = true;
-                    
-                    // Update button states
-                    this.updateButtonStates(prayerName);
-                    
-                    this.audio.play().catch(error => {
-                        console.error('Error playing audio:', error);
-                        this.cleanupAudio();
-                        this.resetButtonStates();
-                        reject(error);
-                    });
-                    resolve(true);
-                };
-
-                const handleError = async (e) => {
-                    cleanup();
-                    console.error('Error loading audio:', e);
-                    this.cleanupAudio();
-                    this.resetButtonStates();
-                    
-                    // Try playing default Adhan
-                    console.log('Falling back to default Adhan...');
-                    try {
-                        await this.playDefaultAzan();
-                        resolve(true);
-                    } catch (fallbackError) {
-                        reject(fallbackError);
-                    }
-                };
-
-                // Set up timeout for loading
-                const loadTimeout = setTimeout(() => {
-                    cleanup();
-                    this.cleanupAudio();
-                    this.resetButtonStates();
-                    reject(new Error('Audio loading timeout'));
-                }, 10000);
-
-                // Add event listeners
-                this.audio.oncanplaythrough = handleCanPlay;
-                this.audio.onerror = handleError;
-                this.audio.onended = () => {
-                    this.cleanupAudio();
-                    this.resetButtonStates();
-                };
-
-                // Set audio source with absolute path
-                const audioPath = `/adhans/${selectedQari}/${selectedFile}`;
-                console.log('🎵 Loading audio from:', audioPath);
-                this.audio.src = audioPath;
-                this.audio.load();
-            });
+            // Construct the audio URL with the correct base path
+            const audioUrl = `${this.basePath}/adhans/${qari}/${audioFile}`;
+            
+            console.log(`Playing adhan for ${prayer} using ${qari}/${audioFile}`);
+            
+            // Create a new audio element
+            this.audio = new Audio(audioUrl);
+            
+            // Set up event listeners
+            this.setupAudioEvents();
+            
+            // Start playback
+            await this.audio.play();
+            
+            this.isPlaying = true;
+            this.isLoading = false;
+            
+            return true;
         } catch (error) {
-            console.error('Error in playAzan:', error);
-            this.cleanupAudio();
-            this.resetButtonStates();
-            await this.playDefaultAzan();
+            console.error('Error playing adhan:', error);
+            this.isPlaying = false;
+            this.isLoading = false;
             return false;
         }
     }
@@ -646,7 +604,7 @@ class AdhanPlayer {
             }
             
             // For other Qaris, fetch the file list from the correct server port
-            const response = await fetch(`http://localhost:3001/adhans/${qari}/list`);
+            const response = await fetch(`${this.basePath}/api/adhans/${qari}/list`);
             if (!response.ok) {
                 throw new Error(`Failed to load files for ${qari}`);
             }
@@ -736,6 +694,60 @@ class AdhanPlayer {
         };
 
         return button;
+    }
+
+    setupAudioEvents() {
+        if (!this.audio) return;
+        
+        this.audio.onended = () => {
+            console.log('Audio playback ended');
+            this.isPlaying = false;
+            this.audio = null;
+        };
+        
+        this.audio.onerror = (error) => {
+            console.error('Audio error:', error);
+            this.isPlaying = false;
+            this.isLoading = false;
+            this.audio = null;
+        };
+        
+        this.audio.oncanplaythrough = () => {
+            console.log('Audio can play through');
+        };
+    }
+
+    async fetchAvailableQaris() {
+        try {
+            // Use relative URL instead of hardcoded localhost
+            const apiUrl = `${this.basePath}/api/qaris`;
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch qaris: ${response.status}`);
+            }
+            const data = await response.json();
+            this.availableQaris = data.qaris || [];
+            return this.availableQaris;
+        } catch (error) {
+            console.error('Error fetching qaris:', error);
+            return [];
+        }
+    }
+
+    async fetchQariFiles(qari) {
+        try {
+            // Use relative URL instead of hardcoded localhost
+            const apiUrl = `${this.basePath}/api/adhans/${qari}/list`;
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch files for ${qari}: ${response.status}`);
+            }
+            const data = await response.json();
+            return data.files || [];
+        } catch (error) {
+            console.error(`Error fetching files for ${qari}:`, error);
+            return [];
+        }
     }
 }
 

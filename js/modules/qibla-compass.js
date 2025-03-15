@@ -64,13 +64,19 @@ class QiblaCompass {
     }
 
     calculateQiblaDirection(latitude, longitude) {
-        const φ1 = this.toRadians(latitude);
-        const φ2 = this.toRadians(this.kaaba.latitude);
-        const Δλ = this.toRadians(this.kaaba.longitude - longitude);
+        // Convert to radians
+        const lat1 = this.toRadians(latitude);
+        const lon1 = this.toRadians(longitude);
+        const lat2 = this.toRadians(this.kaaba.latitude);
+        const lon2 = this.toRadians(this.kaaba.longitude);
 
-        const y = Math.sin(Δλ);
-        const x = Math.cos(φ1) * Math.tan(φ2) - Math.sin(φ1) * Math.cos(Δλ);
-        let qibla = this.toDegrees(Math.atan2(y, x));
+        // Calculate qibla direction
+        const y = Math.sin(lon2 - lon1);
+        const x = Math.cos(lat1) * Math.tan(lat2) - Math.sin(lat1) * Math.cos(lon2 - lon1);
+        let qibla = Math.atan2(y, x);
+
+        // Convert to degrees
+        qibla = this.toDegrees(qibla);
 
         // Normalize to 0-360
         return (qibla + 360) % 360;
@@ -89,6 +95,7 @@ class QiblaCompass {
             this.info.textContent = message;
             this.info.classList.add('error');
         }
+        console.error('Qibla compass error:', message);
     }
 
     // Calculate initial Qibla direction without compass

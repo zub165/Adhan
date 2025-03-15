@@ -3,8 +3,10 @@ const https = require('https');
 const serveHandler = require('serve-handler');
 const fs = require('fs').promises;
 const path = require('path');
+const net = require('net');
 
 let server = null;
+const defaultPort = process.env.PORT || 3001;
 
 // Online source mappings for different Qaris
 const onlineSources = {
@@ -162,189 +164,215 @@ async function getFilesRecursively(dir) {
     }
 }
 
-async function startServer(port) {
-    if (server) {
-        try {
-            await new Promise((resolve) => server.close(resolve));
-        } catch (err) {
-            console.error('Error closing existing server:', err);
-        }
-    }
-
-    server = http.createServer(async (req, res) => {
-        // Enable CORS
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-        // Handle preflight requests
-        if (req.method === 'OPTIONS') {
-            res.writeHead(200);
-            res.end();
-            return;
-        }
-
-        // Handle Aladhan API proxy requests
-        if (req.url.startsWith('/api/aladhan/')) {
-            try {
-                const apiPath = req.url.replace('/api/aladhan/', '');
-                const aladhanUrl = `https://api.aladhan.com/v1/${apiPath}`;
-                const data = await proxyAladhanAPI(aladhanUrl);
-                
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(data);
-                return;
-            } catch (error) {
-                console.error('Error proxying Aladhan API:', error);
-                res.writeHead(500);
-                res.end(JSON.stringify({ error: 'Failed to fetch prayer times' }));
-                return;
-            }
-        }
-
-        // Handle audio file listing requests
-        if (req.url.startsWith('/adhans/') && req.url.endsWith('/list')) {
-            try {
-                const qariPath = req.url.slice(1, -5); // Remove leading / and /list
-                const dirPath = path.join(__dirname, qariPath);
-                const qariName = path.basename(qariPath);
-                
-                let mp3Files = [];
-
-                // First, try to get local files
-                try {
-                    const allFiles = await getFilesRecursively(dirPath);
-                    mp3Files = allFiles
-                        .filter(file => file.toLowerCase().endsWith('.mp3'))
-                        .map(file => {
-                            const relativePath = path.relative(dirPath, file);
-                            return {
-                                name: relativePath,
-                                local: true,
-                                url: `/adhans/${qariName}/${relativePath}`
-                            };
-                        });
-                    console.log(`Found ${mp3Files.length} local files in ${qariPath}:`, mp3Files);
-                } catch (err) {
-                    console.log(`No local files found for ${qariName}:`, err.message);
-                }
-
-                // If this Qari has online sources, add them
-                if (onlineSources[qariName]) {
-                    const source = onlineSources[qariName];
-                    const onlineFiles = await Promise.all(source.files.map(async file => {
-                        const localPath = path.join(dirPath, file.name);
-                        const exists = await fileExists(localPath);
-                        return {
-                            name: file.name,
-                            local: exists,
-                            url: exists ? 
-                                `/adhans/${qariName}/${file.name}` : 
-                                `${source.baseUrl}${file.id}.mp3`,
-                            needsDownload: !exists
-                        };
-                    }));
-                    
-                    // Add online files that aren't already local
-                    onlineFiles.forEach(file => {
-                        if (!mp3Files.some(f => f.name === file.name)) {
-                            mp3Files.push(file);
-                        }
-                    });
-                    console.log(`Added ${onlineFiles.length} online files for ${qariName}`);
-                }
-
-                // Sort files by name
-                mp3Files.sort((a, b) => a.name.localeCompare(b.name));
-
-                console.log(`Total ${mp3Files.length} files for ${qariName}:`, mp3Files);
-                
-                res.writeHead(200, { 
-                    'Content-Type': 'application/json',
-                    'Cache-Control': 'no-cache'
-                });
-                res.end(JSON.stringify(mp3Files));
-            } catch (error) {
-                console.error('Error listing files:', error);
-                res.writeHead(500);
-                res.end(JSON.stringify([]));
-            }
-            return;
-        }
-
-        // Handle file download requests
-        if (req.url.startsWith('/adhans/') && req.url.includes('/download/')) {
-            try {
-                const parts = req.url.split('/download/');
-                const qariName = parts[0].split('/')[2];
-                const fileName = parts[1];
-
-                if (onlineSources[qariName]) {
-                    const source = onlineSources[qariName];
-                    const file = source.files.find(f => f.name === fileName);
-                    
-                    if (file) {
-                        const localPath = path.join(__dirname, 'adhans', qariName, fileName);
-                        const sourceUrl = `${source.baseUrl}${file.id}.mp3`;
-
-                        await downloadFile(sourceUrl, localPath);
-                        
-                        res.writeHead(200, { 'Content-Type': 'application/json' });
-                        res.end(JSON.stringify({ success: true, path: `/adhans/${qariName}/${fileName}` }));
-                        return;
-                    }
-                }
-
-                res.writeHead(404);
-                res.end(JSON.stringify({ error: 'File not found' }));
-            } catch (error) {
-                console.error('Error downloading file:', error);
-                res.writeHead(500);
-                res.end(JSON.stringify({ error: 'Download failed' }));
-            }
-            return;
-        }
-
-        // Handle all other requests with serve-handler
-        return serveHandler(req, res, {
-            public: __dirname,
-            directoryListing: true,
-            renderSingle: true,
-            cleanUrls: false,
-            symlinks: true,
-            headers: [
-                {
-                    source: '**/*.mp3',
-                    headers: [{
-                        key: 'Content-Type',
-                        value: 'audio/mpeg'
-                    }]
-                }
-            ],
-            rewrites: [
-                { source: '/adhans/**', destination: '/adhans/:splat' }
-            ],
-            cors: true
-        });
-    });
-
-    return new Promise((resolve, reject) => {
+// Function to check if a port is in use
+function isPortInUse(port) {
+    return new Promise((resolve) => {
+        const server = net.createServer();
+        
         server.once('error', (err) => {
             if (err.code === 'EADDRINUSE') {
-                console.log(`Port ${port} is in use, trying ${port + 1}...`);
-                resolve(startServer(port + 1));
+                resolve(true);
             } else {
-                reject(err);
+                resolve(false);
             }
         });
-
+        
         server.once('listening', () => {
-            console.log(`Server running at http://localhost:${port}`);
-            resolve(server);
+            server.close();
+            resolve(false);
         });
-
+        
         server.listen(port);
     });
+}
+
+// Function to find an available port
+async function findAvailablePort(startPort) {
+    let port = startPort;
+    while (await isPortInUse(port)) {
+        console.log(`Port ${port} is in use, trying ${port + 1}...`);
+        port++;
+        if (port > startPort + 10) {
+            console.error('Could not find an available port after 10 attempts');
+            process.exit(1);
+        }
+    }
+    return port;
+}
+
+// Start server with port conflict handling
+async function startServer() {
+    try {
+        const port = await findAvailablePort(defaultPort);
+        server = http.createServer(async (req, res) => {
+            // Enable CORS
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+            // Handle preflight requests
+            if (req.method === 'OPTIONS') {
+                res.writeHead(200);
+                res.end();
+                return;
+            }
+
+            // Handle Aladhan API proxy requests
+            if (req.url.startsWith('/api/aladhan/')) {
+                try {
+                    const apiPath = req.url.replace('/api/aladhan/', '');
+                    const aladhanUrl = `https://api.aladhan.com/v1/${apiPath}`;
+                    const data = await proxyAladhanAPI(aladhanUrl);
+                    
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(data);
+                    return;
+                } catch (error) {
+                    console.error('Error proxying Aladhan API:', error);
+                    res.writeHead(500);
+                    res.end(JSON.stringify({ error: 'Failed to fetch prayer times' }));
+                    return;
+                }
+            }
+
+            // Handle audio file listing requests
+            if (req.url.startsWith('/adhans/') && req.url.endsWith('/list')) {
+                try {
+                    const qariPath = req.url.slice(1, -5); // Remove leading / and /list
+                    const dirPath = path.join(__dirname, qariPath);
+                    const qariName = path.basename(qariPath);
+                    
+                    let mp3Files = [];
+
+                    // First, try to get local files
+                    try {
+                        const allFiles = await getFilesRecursively(dirPath);
+                        mp3Files = allFiles
+                            .filter(file => file.toLowerCase().endsWith('.mp3'))
+                            .map(file => {
+                                const relativePath = path.relative(dirPath, file);
+                                return {
+                                    name: relativePath,
+                                    local: true,
+                                    url: `/adhans/${qariName}/${relativePath}`
+                                };
+                            });
+                        console.log(`Found ${mp3Files.length} local files in ${qariPath}:`, mp3Files);
+                    } catch (err) {
+                        console.log(`No local files found for ${qariName}:`, err.message);
+                    }
+
+                    // If this Qari has online sources, add them
+                    if (onlineSources[qariName]) {
+                        const source = onlineSources[qariName];
+                        const onlineFiles = await Promise.all(source.files.map(async file => {
+                            const localPath = path.join(dirPath, file.name);
+                            const exists = await fileExists(localPath);
+                            return {
+                                name: file.name,
+                                local: exists,
+                                url: exists ? 
+                                    `/adhans/${qariName}/${file.name}` : 
+                                    `${source.baseUrl}${file.id}.mp3`,
+                                needsDownload: !exists
+                            };
+                        }));
+                        
+                        // Add online files that aren't already local
+                        onlineFiles.forEach(file => {
+                            if (!mp3Files.some(f => f.name === file.name)) {
+                                mp3Files.push(file);
+                            }
+                        });
+                        console.log(`Added ${onlineFiles.length} online files for ${qariName}`);
+                    }
+
+                    // Sort files by name
+                    mp3Files.sort((a, b) => a.name.localeCompare(b.name));
+
+                    console.log(`Total ${mp3Files.length} files for ${qariName}:`, mp3Files);
+                    
+                    res.writeHead(200, { 
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache'
+                    });
+                    res.end(JSON.stringify(mp3Files));
+                } catch (error) {
+                    console.error('Error listing files:', error);
+                    res.writeHead(500);
+                    res.end(JSON.stringify([]));
+                }
+                return;
+            }
+
+            // Handle file download requests
+            if (req.url.startsWith('/adhans/') && req.url.includes('/download/')) {
+                try {
+                    const parts = req.url.split('/download/');
+                    const qariName = parts[0].split('/')[2];
+                    const fileName = parts[1];
+
+                    if (onlineSources[qariName]) {
+                        const source = onlineSources[qariName];
+                        const file = source.files.find(f => f.name === fileName);
+                        
+                        if (file) {
+                            const localPath = path.join(__dirname, 'adhans', qariName, fileName);
+                            const sourceUrl = `${source.baseUrl}${file.id}.mp3`;
+
+                            await downloadFile(sourceUrl, localPath);
+                            
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ success: true, path: `/adhans/${qariName}/${fileName}` }));
+                            return;
+                        }
+                    }
+
+                    res.writeHead(404);
+                    res.end(JSON.stringify({ error: 'File not found' }));
+                } catch (error) {
+                    console.error('Error downloading file:', error);
+                    res.writeHead(500);
+                    res.end(JSON.stringify({ error: 'Download failed' }));
+                }
+                return;
+            }
+
+            // Handle API requests
+            if (handleApiRequest(req, res)) {
+                return;
+            }
+
+            // Handle all other requests with serve-handler
+            return serveHandler(req, res, {
+                public: __dirname,
+                directoryListing: true,
+                renderSingle: true,
+                cleanUrls: false,
+                symlinks: true,
+                headers: [
+                    {
+                        source: '**/*.mp3',
+                        headers: [{
+                            key: 'Content-Type',
+                            value: 'audio/mpeg'
+                        }]
+                    }
+                ],
+                rewrites: [
+                    { source: '/adhans/**', destination: '/adhans/:splat' }
+                ],
+                cors: true
+            });
+        });
+        
+        server.listen(port, () => {
+            console.log(`Server running at http://localhost:${port}/`);
+        });
+    } catch (error) {
+        console.error('Failed to start server:', error);
+        process.exit(1);
+    }
 }
 
 // Handle graceful shutdown
@@ -357,5 +385,61 @@ process.on('SIGTERM', () => {
     }
 });
 
-const PORT = process.env.PORT || 3000;
-startServer(PORT).catch(console.error); 
+// Handle API requests
+function handleApiRequest(req, res) {
+    // API endpoint for qaris list
+    if (req.url === '/api/qaris') {
+        const qarisList = Object.keys(onlineSources);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ qaris: qarisList }));
+        return true;
+    }
+    
+    // API endpoint for adhan files list
+    if (req.url.startsWith('/api/adhans/') && req.url.endsWith('/list')) {
+        const qariName = req.url.split('/')[3];
+        
+        if (!onlineSources[qariName]) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Qari ${qariName} not found` }));
+            return true;
+        }
+        
+        const qariDir = path.join(__dirname, 'adhans', qariName);
+        
+        if (!fs.existsSync(qariDir)) {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: `Directory for ${qariName} not found` }));
+            return true;
+        }
+        
+        try {
+            const files = fs.readdirSync(qariDir)
+                .filter(file => file.endsWith('.mp3'))
+                .map(file => {
+                    const filePath = path.join(qariDir, file);
+                    const stats = fs.statSync(filePath);
+                    const relativePath = file;
+                    return {
+                        name: file,
+                        size: stats.size,
+                        url: `/adhans/${qariName}/${relativePath}`
+                    };
+                });
+            
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ files }));
+        } catch (error) {
+            console.error(`Error reading directory ${qariDir}:`, error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Server error' }));
+        }
+        
+        return true;
+    }
+    
+    return false;
+}
+
+// Start the server
+startServer(); 

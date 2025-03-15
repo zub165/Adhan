@@ -9,6 +9,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="icon" type="image/png" href="assets/icons/favicon.png">
+    <script>
+        // Helper function to determine if we're running on GitHub Pages
+        function isGitHubPages() {
+            return window.location.hostname === 'zub165.github.io';
+        }
+        
+        // Helper function to get the base path
+        function getBasePath() {
+            if (isGitHubPages()) {
+                return '/Adhan';
+            }
+            return '';
+        }
+        
+        // Dynamically set the base href
+        const basePath = getBasePath();
+        if (basePath) {
+            const baseElement = document.createElement('base');
+            baseElement.href = basePath + '/';
+            document.head.appendChild(baseElement);
+        }
+    </script>
 </head>
 <body>
     <div class="pattern-bg"></div>
@@ -238,9 +260,5 @@
     <div class="notification-banner" id="notificationBanner">
         Enable notifications to get prayer time alerts
     </div>
-
-    <!-- Add Adhan Library -->
-    <script src="https://cdn.jsdelivr.net/npm/adhan@4.4.3/dist/adhan.min.js"></script>
-    <script type="module" src="js/modules/app-init.js"></script>
 </body>
 </html>
