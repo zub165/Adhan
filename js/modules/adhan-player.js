@@ -1,15 +1,13 @@
 class AdhanPlayer {
     constructor() {
+
         this.availableQaris = [
             'Local',
-            'abdul-basit',
-            'al-hussary',
-            'al-minshawi',
-            'al-ghamdi',
-            'mishary-rashid',
+            'assabile',
+            'default',
+            'islamcan',
             'madinah',
-            'makkah',
-            'islamcan'
+            'makkah'
         ];
         this.currentQari = localStorage.getItem('defaultQari') || 'Local';
         this.baseUrl = window.location.hostname.includes('github.io') ? '/Adhan' : '';
@@ -25,7 +23,8 @@ class AdhanPlayer {
         }
     }
 
-    initializeQariSelectors() {
+    async initializeQariSelectors() {
+
         const prayers = ['tahajjud', 'suhoor', 'fajr', 'ishraq', 'dhuhr', 'asr', 'maghrib', 'isha'];
         prayers.forEach(prayer => {
             const prayerCard = document.querySelector(`.prayer-card[data-prayer="${prayer}"]`);
@@ -156,7 +155,7 @@ class AdhanPlayer {
             }
         });
         // Scan and populate Qari options
-        this.scanAvailableQaris();
+        await this.scanAvailableQaris();
     }
 
     async updateFileList(prayer, qari) {
@@ -275,7 +274,8 @@ class AdhanPlayer {
             'madina': 'Madinah',
             'madinah': 'Madinah',
             'makkah': 'Makkah',
-            'default': 'Default'
+            'default': 'Default',
+            'assabile': 'Assabile'
         };
 
         if (specialNames[qari]) {
@@ -290,30 +290,24 @@ class AdhanPlayer {
 
     async scanAvailableQaris() {
         try {
-            // List of all available Qaris from the adhans directory
+            // List of all available Qaris from the adhans directory (matching actual directories)
             const qariList = [
-                'abdul-basit',
-                'al-ghamdi',
-                'al-hussary',
-                'al-minshawi',
                 'assabile',
                 'default',
                 'islamcan',
                 'Local',
-                'madina',
                 'madinah',
-                'makkah',
-                'mishary-rashid',
-                'muaiqly'
+                'makkah'
             ];
             
             // Verify each Qari directory exists
             this.availableQaris = qariList;
             
             // Update all Qari selectors with the verified list
+
             this.updateQariSelectors();
             
-            console.log('✅ Available Qaris:', this.availableQaris);
+
             return this.availableQaris;
         } catch (error) {
             console.error('Error scanning Qaris:', error);
@@ -325,15 +319,24 @@ class AdhanPlayer {
     }
 
     updateQariSelectors() {
+
         const prayers = ['tahajjud', 'suhoor', 'fajr', 'ishraq', 'dhuhr', 'asr', 'maghrib', 'isha'];
         prayers.forEach(prayer => {
             const select = document.getElementById(`${prayer}QariSelect`);
             if (select) {
+
                 // Store current selection
                 const currentSelection = select.value;
                 
                 // Clear existing options
                 select.innerHTML = '';
+                
+                // Add a default "Select Qari" option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Select Qari...';
+                defaultOption.disabled = true;
+                select.appendChild(defaultOption);
                 
                 // Add available qaris
                 this.availableQaris.forEach(qari => {
@@ -341,19 +344,22 @@ class AdhanPlayer {
                     option.value = qari;
                     option.textContent = this.formatQariName(qari);
                     select.appendChild(option);
+
                 });
                 
                 // Restore previous selection or set default
-                const savedQari = localStorage.getItem(`${prayer}Qari`) || currentSelection || 'default';
+                const savedQari = localStorage.getItem(`${prayer}Qari`) || currentSelection || 'Local';
                 if (this.availableQaris.includes(savedQari)) {
                     select.value = savedQari;
                 } else {
-                    select.value = 'default';
+                    select.value = 'Local'; // Default to Local if saved qari is not available
                 }
                 
                 // Trigger change event to update audio files
                 const event = new Event('change');
                 select.dispatchEvent(event);
+            } else {
+
             }
         });
     }
