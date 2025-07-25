@@ -1,6 +1,6 @@
 class AdhanPlayer {
     constructor() {
-
+        console.log('🎵 AdhanPlayer constructor called');
         this.availableQaris = [
             'Local',
             'assabile',
@@ -17,14 +17,16 @@ class AdhanPlayer {
         
         // Initialize after DOM is fully loaded
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.initializeQariSelectors());
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => this.initializeQariSelectors(), 100);
+            });
         } else {
-            this.initializeQariSelectors();
+            setTimeout(() => this.initializeQariSelectors(), 100);
         }
     }
 
     async initializeQariSelectors() {
-
+        console.log('🚀 Initializing Qari selectors...');
         const prayers = ['tahajjud', 'suhoor', 'fajr', 'ishraq', 'dhuhr', 'asr', 'maghrib', 'isha'];
         prayers.forEach(prayer => {
             const prayerCard = document.querySelector(`.prayer-card[data-prayer="${prayer}"]`);
@@ -319,12 +321,12 @@ class AdhanPlayer {
     }
 
     updateQariSelectors() {
-
+        console.log('🔄 Updating Qari selectors with:', this.availableQaris);
         const prayers = ['tahajjud', 'suhoor', 'fajr', 'ishraq', 'dhuhr', 'asr', 'maghrib', 'isha'];
         prayers.forEach(prayer => {
             const select = document.getElementById(`${prayer}QariSelect`);
             if (select) {
-
+                console.log(`✅ Found select for ${prayer}, populating with ${this.availableQaris.length} qaris`);
                 // Store current selection
                 const currentSelection = select.value;
                 
@@ -359,7 +361,7 @@ class AdhanPlayer {
                 const event = new Event('change');
                 select.dispatchEvent(event);
             } else {
-
+                console.error(`❌ Select element NOT found for ${prayer}`);
             }
         });
     }
