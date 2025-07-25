@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Qari Dropdowns</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        select { width: 200px; padding: 8px; margin: 5px; }
+        button { padding: 8px 15px; margin: 5px; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>Test Qari Dropdowns</h1>
+    
+    <div class="test-section">
+        <h3>Manual Test</h3>
+        <select id="testQariSelect">
+            <option value="">Select Qari...</option>
+        </select>
+        <button onclick="populateTestDropdown()">Populate Dropdown</button>
+        <div id="testResult" class="debug"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Check Original App Elements</h3>
+        <button onclick="checkOriginalElements()">Check Original App</button>
+        <div id="originalResult" class="debug"></div>
+    </div>
+
+    <script>
+        function log(message, elementId = 'testResult') {
+            console.log(message);
+            document.getElementById(elementId).innerHTML += message + '<br>';
+        }
+
+        function populateTestDropdown() {
+            const select = document.getElementById('testQariSelect');
+            const qaris = ['Local', 'assabile', 'default', 'islamcan', 'madinah', 'makkah'];
+            
+            log('Clearing test dropdown...');
+            select.innerHTML = '<option value="">Select Qari...</option>';
+            
+            log('Adding qari options...');
+            qaris.forEach(qari => {
+                const option = document.createElement('option');
+                option.value = qari;
+                option.textContent = qari;
+                select.appendChild(option);
+                log(`Added: ${qari}`);
+            });
+            
+            log(`Total options: ${select.options.length}`);
+        }
+
+        function checkOriginalElements() {
+            const prayers = ['tahajjud', 'suhoor', 'fajr', 'ishraq', 'dhuhr', 'asr', 'maghrib', 'isha'];
+            let found = 0;
+            let missing = 0;
+            
+            prayers.forEach(prayer => {
+                const select = document.getElementById(`${prayer}QariSelect`);
+                if (select) {
+                    found++;
+                    log(`✅ ${prayer}: found (${select.options.length} options)`, 'originalResult');
+                } else {
+                    missing++;
+                    log(`❌ ${prayer}: NOT FOUND`, 'originalResult');
+                }
+            });
+            
+            log(`Summary: ${found} found, ${missing} missing`, 'originalResult');
+            
+            // Try to populate any found elements
+            if (found > 0) {
+                log('Attempting to populate found elements...', 'originalResult');
+                prayers.forEach(prayer => {
+                    const select = document.getElementById(`${prayer}QariSelect`);
+                    if (select) {
+                        populateSelectElement(select, prayer);
+                    }
+                });
+            }
+        }
+
+        function populateSelectElement(select, prayer) {
+            const qaris = ['Local', 'assabile', 'default', 'islamcan', 'madinah', 'makkah'];
+            
+            select.innerHTML = '<option value="">Select Qari...</option>';
+            qaris.forEach(qari => {
+                const option = document.createElement('option');
+                option.value = qari;
+                option.textContent = qari;
+                select.appendChild(option);
+            });
+            
+            log(`Populated ${prayer} with ${qaris.length} options`, 'originalResult');
+        }
+
+        // Auto-run tests when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            log('Test page loaded');
+            setTimeout(() => {
+                log('Running automatic tests...');
+                populateTestDropdown();
+                setTimeout(checkOriginalElements, 1000);
+            }, 500);
+        });
+    </script>
+</body>
+</html>
